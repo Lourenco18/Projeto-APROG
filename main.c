@@ -3,14 +3,14 @@
 #include <string.h>
 #include <time.h>
 
-//procedimento para limpar a tela
+// Procedimento para limpar a tela
 #ifdef _WIN32
     #define LIMPAR_TELA "cls"
 #else
     #define LIMPAR_TELA "clear"
 #endif
 
-//valores máximos de senhas de urgência e senhas
+// Valores máximos de senhas de urgência e senhas
 #define MAX_SENHAS_URGENTES 10
 #define MAX_SENHAS 100
 
@@ -46,17 +46,23 @@ time_t validar_data() {
     char entrada[20];
 
     while (1) {
-        printf("Digite a data e hora no formato 'AAAA-MM-DD HH:MM:SS': ");
+        printf("Digite a data e hora no formato 'DD-MM-AAAA HH:MM:SS': ");
         scanf(" %[^\n]s", entrada);
 
         // Limpar a estrutura e preencher com a entrada
         memset(&data, 0, sizeof(data));
-        if (strptime(entrada, "%Y-%m-%d %H:%M:%S", &data)) {
+        if (strptime(entrada, "%d-%m-%Y %H:%M:%S", &data)) {
             return mktime(&data); // Retorna a data
         } else {
             printf("Formato inválido. Tente novamente.\n");
         }
     }
+}
+
+// Função para formatar o horário em "DD-MM-AAAA HH:MM:SS"
+void formatar_data(char *buffer, time_t tempo) {
+    struct tm *tm_info = localtime(&tempo);
+    strftime(buffer, 20, "%d-%m-%Y %H:%M:%S", tm_info);
 }
 
 // Função para gerar uma nova senha
@@ -91,7 +97,7 @@ void gerar_senha(char *tipo) {
 
     senhas[contador_senhas++] = nova_senha;
 
-    if (strcmp(tipo, "Urgente") == 0) {// == 0 significa que é true
+    if (strcmp(tipo, "Urgente") == 0) {
         contador_senhas_urgentes++;
     }
 
@@ -103,10 +109,13 @@ void gerar_senha(char *tipo) {
 void listar_senhas() {
     limpar_tela();
     printf("Lista de Senhas:\n");
+    char buffer[20];
     for (int i = 0; i < contador_senhas; i++) {
-        printf("ID: %d, Tipo: %s, Gerado em: %s", senhas[i].id, senhas[i].tipo, ctime(&senhas[i].horario_gerado));
+        formatar_data(buffer, senhas[i].horario_gerado);
+        printf("ID: %d, Tipo: %s, Gerado em: %s\n", senhas[i].id, senhas[i].tipo, buffer);
         if (senhas[i].horario_atendido != 0) {
-            printf("Atendido a: %s", ctime(&senhas[i].horario_atendido));
+            formatar_data(buffer, senhas[i].horario_atendido);
+            printf("Atendido a: %s\n", buffer);
             printf("Balcão: %d\n", senhas[i].balcao_atendido);
             printf("Informações adicionais: %s\n", senhas[i].informacoes_adicionais);
             printf("Valor pago: %.2f€\n", senhas[i].pagamento);
@@ -214,47 +223,52 @@ void gerar_relatorios() {
                         atendidas++;
                     }
                 }
-                if (atendidas > 0) {
-                    printf("Média de espera no intervalo: %.2f segundos\n", tempo_total_espera / atendidas);
-                } else {
+                if (atendidas == 0) {
                     printf("Nenhuma senha atendida no intervalo.\n");
+                } else {
+                    printf("Tempo médio de espera: %.2f segundos.\n", tempo_total_espera / atendidas);
                 }
                 esperar_tecla();
                 break;
             }
             case 3: {
-                int balcao1 = 0, balcao2 = 0, balcao3 = 0;
+                int atendimentos_balcao[4] = {0};
                 for (int i = 0; i < contador_senhas; i++) {
                     if (senhas[i].horario_atendido >= inicio && senhas[i].horario_atendido <= fim) {
-                        if (senhas[i].balcao_atendido == 1) balcao1++;
-                        if (senhas[i].balcao_atendido == 2) balcao2++;
-                        if (senhas[i].balcao_atendido == 3) balcao3++;
+                        atendimentos_balcao[senhas[i].balcao_atendido]++;
                     }
                 }
-                printf("Balcão 1: %d atendimentos\n", balcao1);
-                printf("Balcão 2: %d atendimentos\n", balcao2);
-                printf("Balcão 3: %d atendimentos\n", balcao3);
+                for (int i = 1; i <= 3; i++) {
+                    printf("Balcão %d: %d atendimentos.\n", i, atendimentos_balcao[i]);
+                }
                 esperar_tecla();
                 break;
             }
             case 4: {
-                float receita_total = 0;
+                double total_receita = 0.0;
                 for (int i = 0; i < contador_senhas; i++) {
                     if (senhas[i].horario_atendido >= inicio && senhas[i].horario_atendido <= fim) {
-                        receita_total += senhas[i].pagamento;
+                        total_receita += senhas[i].pagamento;
                     }
                 }
-                printf("Receitas no intervalo: %.2f\n", receita_total);
+                printf("Receitas totais: %.2f€\n", total_receita);
                 esperar_tecla();
                 break;
             }
             case 5:
-                gerar_relatorios(); // Chama novamente para alterar o intervalo
-                return;
+                printf("Digite o horário de início:\n");
+                inicio = validar_data();
+                printf("Digite o horário de fim:\n");
+                fim = validar_data();
+                if (inicio >= fim) {
+                    printf("Intervalo inválido: o início tem de ser anterior ao fim.\n");
+                    esperar_tecla();
+                }
+                break;
             case 6:
-                return; // Volta para o menu principal
+                return;
             default:
-                printf("Opção inválida!\n");
+                printf("Opção inválida.\n");
                 esperar_tecla();
         }
     }
@@ -264,12 +278,12 @@ void gerar_relatorios() {
 int main() {
     while (1) {
         limpar_tela();
-        printf("Sistema de Senhas de Atendimento\n");
-        printf("1. Gerar Senha de Consulta Marcada\n");
-        printf("2. Gerar Senha de Consulta de Urgência\n");
-        printf("3. Listar Senhas\n");
-        printf("4. Atender Senha\n");
-        printf("5. Gerar Relatórios\n");
+        printf("Menu Principal:\n");
+        printf("1. Gerar senha de consulta\n");
+        printf("2. Gerar senha de urgência\n");
+        printf("3. Listar senhas\n");
+        printf("4. Atender senha\n");
+        printf("5. Gerar relatórios\n");
         printf("6. Sair\n");
         printf("Escolha uma opção: ");
         
@@ -287,11 +301,10 @@ int main() {
                 listar_senhas();
                 break;
             case 4: {
-                limpar_tela();
                 int id, balcao;
                 printf("Digite o ID da senha a ser atendida: ");
                 scanf("%d", &id);
-                printf("Digite o balcão de atendimento: ");
+                printf("Digite o balcão de atendimento (1, 2 ou 3): ");
                 scanf("%d", &balcao);
                 atender_senha(id, balcao);
                 break;
@@ -300,14 +313,10 @@ int main() {
                 gerar_relatorios();
                 break;
             case 6:
-                printf("Sistema Encerrado.\n");
-                 limpar_tela();
-                exit(0);
-               
+                return 0;
             default:
-                printf("Opção inválida! Tente novamente.\n");
+                printf("Opção inválida. Tente novamente.\n");
                 esperar_tecla();
         }
     }
-    return 0;
 }
