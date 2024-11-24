@@ -3,12 +3,14 @@
 #include <string.h>
 #include <time.h>
 
+//procedimento para limpar a tela
 #ifdef _WIN32
     #define LIMPAR_TELA "cls"
 #else
     #define LIMPAR_TELA "clear"
 #endif
 
+//valores máximos de senhas de urgência e senhas
 #define MAX_SENHAS_URGENTES 10
 #define MAX_SENHAS 100
 
@@ -22,7 +24,7 @@ typedef struct {
     int balcao_atendido; // Balcão onde foi atendido
 } Senha;
 
-Senha senhas[MAX_SENHAS];
+Senha senhas[MAX_SENHAS]; // Vetor de senhas
 int contador_senhas = 0;
 int contador_senhas_urgentes = 0;
 
@@ -31,15 +33,15 @@ void limpar_tela() {
     system(LIMPAR_TELA);
 }
 
-// Função para aguardar o usuário pressionar qualquer tecla
+// Função para esperar o utilizador pressionar qualquer tecla
 void esperar_tecla() {
     printf("\nPressione qualquer tecla para continuar...\n");
     getchar(); // Para capturar o Enter pendente
-    getchar(); // Aguarda o usuário pressionar uma tecla
+    getchar(); // Aguarda o utilizador pressionar uma tecla
 }
 
-// Função para validar um timestamp digitado pelo usuário
-time_t validar_timestamp() {
+// Função para validar o formato da data escrita pelo utilizador
+time_t validar_data() {
     struct tm data;
     char entrada[20];
 
@@ -50,7 +52,7 @@ time_t validar_timestamp() {
         // Limpar a estrutura e preencher com a entrada
         memset(&data, 0, sizeof(data));
         if (strptime(entrada, "%Y-%m-%d %H:%M:%S", &data)) {
-            return mktime(&data); // Retorna o timestamp
+            return mktime(&data); // Retorna a data
         } else {
             printf("Formato inválido. Tente novamente.\n");
         }
@@ -60,6 +62,7 @@ time_t validar_timestamp() {
 // Função para gerar uma nova senha
 void gerar_senha(char *tipo) {
     limpar_tela();
+    // Verificar se o limite de senhas de urgência foi atingido
     if (strcmp(tipo, "Urgente") == 0 && contador_senhas_urgentes >= MAX_SENHAS_URGENTES) {
         printf("Limite de senhas de urgência atingido.\n");
         esperar_tecla();
@@ -72,10 +75,10 @@ void gerar_senha(char *tipo) {
     nova_senha.horario_gerado = time(NULL);
     nova_senha.horario_atendido = 0; // Ainda não atendido
     nova_senha.balcao_atendido = 0; // Ainda não atendido
-    strcpy(nova_senha.informacoes_adicionais, ""); // Informações adicionais padrão
-    nova_senha.pagamento = 0.0; // Pagamento padrão
+    strcpy(nova_senha.informacoes_adicionais, ""); // Informações adicionais vazias
+    nova_senha.pagamento = 0.0; // Pagamento 0
 
-    // Para senhas de consulta, solicitar o valor do pagamento
+    // Para senhas de consulta, pedir o valor
     if (strcmp(tipo, "Consulta") == 0) {
         printf("Digite o valor a pagar pela consulta (0€ ou superior): ");
         scanf("%f", &nova_senha.pagamento);
@@ -88,7 +91,7 @@ void gerar_senha(char *tipo) {
 
     senhas[contador_senhas++] = nova_senha;
 
-    if (strcmp(tipo, "Urgente") == 0) {
+    if (strcmp(tipo, "Urgente") == 0) {// == 0 significa que é true
         contador_senhas_urgentes++;
     }
 
@@ -103,10 +106,10 @@ void listar_senhas() {
     for (int i = 0; i < contador_senhas; i++) {
         printf("ID: %d, Tipo: %s, Gerado em: %s", senhas[i].id, senhas[i].tipo, ctime(&senhas[i].horario_gerado));
         if (senhas[i].horario_atendido != 0) {
-            printf("Atendido em: %s", ctime(&senhas[i].horario_atendido));
+            printf("Atendido a: %s", ctime(&senhas[i].horario_atendido));
             printf("Balcão: %d\n", senhas[i].balcao_atendido);
             printf("Informações adicionais: %s\n", senhas[i].informacoes_adicionais);
-            printf("Valor pago: %.2f\n", senhas[i].pagamento);
+            printf("Valor pago: %.2f€\n", senhas[i].pagamento);
         } else {
             printf("Ainda não atendido.\n");
         }
@@ -166,12 +169,12 @@ void gerar_relatorios() {
     limpar_tela();
     time_t inicio, fim;
     printf("Digite o horário de início:\n");
-    inicio = validar_timestamp();
+    inicio = validar_data();
     printf("Digite o horário de fim:\n");
-    fim = validar_timestamp();
+    fim = validar_data();
 
     if (inicio >= fim) {
-        printf("Intervalo inválido: o início deve ser anterior ao fim.\n");
+        printf("Intervalo inválido: o início tem de ser anterior ao fim.\n");
         esperar_tecla();
         return;
     }
