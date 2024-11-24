@@ -1,0 +1,47 @@
+
+
+Objetivo Principal:
+        Construir um programa em C que simule um sistema de emissão de senhas para atendimento ao público num centro de saúde.
+
+
+Todo:
+   1- Gerar de Senhas(função):
+
+        Implementar funcionalidade para gerar senhas para dois tipos de consultas:
+        1.1 Consulta com hora marcada: Gerar uma senha com número sequêncial, data e hora, e completá-la com informações adicionais no momento do atendimento ao utilizador.
+        1.2 Consulta Urgente: Gerar um ticket de forma semelhante e completá-lo com informação relevante aquando do atendimento do utente.
+
+   2- Gestão de senhas:
+
+        2.1 Lista todos os bilhetes para ambos os tipos de consulta, ordenados por data e hora.
+        2.2 Atualizar a informação das senhas quando um utente está a ser atendido.
+
+   3- Funcionalidades de relatório:
+
+        3.1 Gerar relatórios sobre o volume de senhas atendidas dentro de um intervalo de datas especificado.
+        3.2 Calcular e reportar os tempos médios de espera para consultas dentro de um intervalo de datas especificado.
+        3.3 Identificar e reportar os balcões de atendimento mais e menos produtivos dentro de um intervalo de datas especificado.
+        3.4 Gerar relatórios de receitas para consultas agendadas dentro de um intervalo de datas especificado.
+
+   4- Controlos de validação:
+
+        4.1 Garantir que os bilhetes são gerados sequencialmente com base no seu tipo.
+        4.2 Validar que o horário de solicitação de senhas esteja alinhado com o horário de funcionamento do sistema.
+        4.3 Impedir que o balcão 3 atenda as senhas de consultas agendadas.
+        4.4 Garantir que o valor de pagamento das consultas agendadas é igual ou superior a 0.
+        4.5 Implementar um limite para o número de bilhetes de consulta urgente que podem ser gerados por dia.
+        4.6 Funcionalidades adicionais: Sugerir e implementar quaisquer funcionalidades adicionais que possam melhorar o programa.
+
+    5- Relatório + Apresentação:
+
+        5.1 Preparar uma Apresentação de 5 minutos para apresentar o projeto, focando as principais funcionalidades.
+
+        5.2 Preparar um relatório pormenorizado que inclua:
+            1 Capa
+            2 Introdução com um resumo dos objectivos do projeto
+            3 Explicação das principais funções implementadas
+            4 Cenário de utilização com screenshots
+            5 Discussão dos desafios enfrentados e melhorias propostas
+            6 Conclusão com um resumo das dificuldades e propostas de trabalho futuro.
+        
+
