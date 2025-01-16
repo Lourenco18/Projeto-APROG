@@ -1,7 +1,9 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
 
 // Procedimento para limpar a tela
 #ifdef _WIN32
@@ -10,9 +12,15 @@
     #define LIMPAR_TELA "clear"
 #endif
 
-// Valores máximos de senhas de urgência e senhas
+// Valores máximos de senhas de urgência e senhas normais
 #define MAX_SENHAS_URGENTES 10
 #define MAX_SENHAS 100
+
+// Predefined accounts
+#define ADMIN_USER "admin"
+#define ADMIN_PASS "admin"
+#define NORMAL_USER "user"
+#define NORMAL_PASS "user"
 
 typedef struct {
     int id;
@@ -59,7 +67,7 @@ time_t validar_data() {
     }
 }
 
-// Função para formatar o horário em "DD-MM-AAAA HH:MM:SS"
+// Função para formatar o horário a "DD-MM-AAAA HH:MM:SS"
 void formatar_data(char *buffer, time_t tempo) {
     struct tm *tm_info = localtime(&tempo);
     strftime(buffer, 20, "%d-%m-%Y %H:%M:%S", tm_info);
@@ -68,9 +76,13 @@ void formatar_data(char *buffer, time_t tempo) {
 // Função para gerar uma nova senha
 void gerar_senha(char *tipo) {
     limpar_tela();
+
     // Verificar se o limite de senhas de urgência foi atingido
     if (strcmp(tipo, "Urgente") == 0 && contador_senhas_urgentes >= MAX_SENHAS_URGENTES) {
-        printf("Limite de senhas de urgência atingido.\n");
+        printf("=========================================\n");
+        printf("       Limite de Senhas de Urgência      \n");
+        printf("=========================================\n");
+        printf("O limite de senhas de urgência foi atingido.\n");
         esperar_tecla();
         return;
     }
@@ -86,10 +98,16 @@ void gerar_senha(char *tipo) {
 
     // Para senhas de consulta, pedir o valor
     if (strcmp(tipo, "Consulta") == 0) {
+        printf("=========================================\n");
+        printf("      Gerando Senha de Consulta          \n");
+        printf("=========================================\n");
         printf("Digite o valor a pagar pela consulta (0€ ou superior): ");
         scanf("%f", &nova_senha.pagamento);
         if (nova_senha.pagamento < 0) {
-            printf("Valor inválido. Senha não gerada.\n");
+            printf("\n=========================================\n");
+            printf("        Valor inválido!                  \n");
+            printf("=========================================\n");
+            printf("Senha não gerada.\n");
             esperar_tecla();
             return;
         }
@@ -101,46 +119,75 @@ void gerar_senha(char *tipo) {
         contador_senhas_urgentes++;
     }
 
-    printf("Senha gerada: ID %d, Tipo: %s\n", nova_senha.id, nova_senha.tipo);
+    printf("=========================================\n");
+    printf("          Senha Gerada com Sucesso       \n");
+    printf("=========================================\n");
+    printf("ID: %d\n", nova_senha.id);
+    printf("Tipo: %s\n", nova_senha.tipo);
+    printf("Valor: %.2f€\n", nova_senha.pagamento);
+    printf("=========================================\n");
+
     esperar_tecla();
 }
 
 // Função para listar todas as senhas
 void listar_senhas() {
     limpar_tela();
-    printf("Lista de Senhas:\n");
+    printf("Lista de Senhas:\n\n");
+
+    if (contador_senhas == 0) {
+        printf("Nenhuma senha foi gerada ainda.\n");
+        esperar_tecla();
+        return;
+    }
+
     char buffer[20];
     for (int i = 0; i < contador_senhas; i++) {
         formatar_data(buffer, senhas[i].horario_gerado);
-        printf("ID: %d, Tipo: %s, Gerado em: %s\n", senhas[i].id, senhas[i].tipo, buffer);
+        printf("ID: %d\n", senhas[i].id);
+        printf("Tipo: %s\n", senhas[i].tipo);
+        printf("Valor: %.2f€\n", senhas[i].pagamento);
+        printf("Gerado a: %s\n", buffer);
+
         if (senhas[i].horario_atendido != 0) {
             formatar_data(buffer, senhas[i].horario_atendido);
             printf("Atendido a: %s\n", buffer);
             printf("Balcão: %d\n", senhas[i].balcao_atendido);
             printf("Informações adicionais: %s\n", senhas[i].informacoes_adicionais);
-            printf("Valor pago: %.2f€\n", senhas[i].pagamento);
         } else {
-            printf("Ainda não atendido.\n");
+            printf("Status: Ainda não atendido.\n");
         }
+        printf("-----------------------------\n");
     }
+
     esperar_tecla();
 }
 
 // Função para atender uma senha
 void atender_senha(int id, int balcao) {
     limpar_tela();
+    printf("=========================================\n");
+    printf("             Atendimento de Senha         \n");
+    printf("=========================================\n");
+
     // Verificar se o balcão está entre 1 e 3
     if (balcao < 1 || balcao > 3) {
-        printf("Balcão inválido. Escolha um balcão entre 1 e 3.\n");
+        printf("=========================================\n");
+        printf("            Balcão Inválido               \n");
+        printf("=========================================\n");
+        printf("Escolha um balcão entre 1 e 3.\n");
         esperar_tecla();
         return;
     }
 
-    // Verificar se o balcão 3 só atende consultas de urgência
+    // Procurar a senha correspondente ao ID
     for (int i = 0; i < contador_senhas; i++) {
         if (senhas[i].id == id) {
-            // Verifica se a senha já foi atendida
+            // Verificar se a senha já foi atendida
             if (senhas[i].horario_atendido != 0) {
+                printf("=========================================\n");
+                printf("         Senha Já Atendida               \n");
+                printf("=========================================\n");
                 printf("A senha ID %d já foi atendida. Não é possível realizar o atendimento novamente.\n", id);
                 esperar_tecla();
                 return;
@@ -148,6 +195,9 @@ void atender_senha(int id, int balcao) {
 
             // Verificar se o balcão 3 só pode atender senhas urgentes
             if (balcao == 3 && strcmp(senhas[i].tipo, "Consulta") == 0) {
+                printf("=========================================\n");
+                printf("      Restrição no Balcão 3              \n");
+                printf("=========================================\n");
                 printf("O balcão 3 só pode atender consultas de urgência.\n");
                 esperar_tecla();
                 return;
@@ -156,19 +206,28 @@ void atender_senha(int id, int balcao) {
             // Registrar atendimento
             senhas[i].horario_atendido = time(NULL);
             senhas[i].balcao_atendido = balcao;
-            printf("Senha ID %d atendida pelo balcão %d\n", id, balcao);
-            
+
+            printf("=========================================\n");
+            printf("        Atendimento Registrado           \n");
+            printf("=========================================\n");
+            printf("Senha ID %d atendida pelo balcão %d.\n", id, balcao);
+
             // Solicitar informações adicionais para o atendimento
-            printf("Digite informações adicionais sobre o atendimento: ");
+            printf("Digite informações adicionais sobre o atendimento:\n");
             getchar(); // Consumir o caractere de nova linha
             fgets(senhas[i].informacoes_adicionais, sizeof(senhas[i].informacoes_adicionais), stdin);
             senhas[i].informacoes_adicionais[strcspn(senhas[i].informacoes_adicionais, "\n")] = 0; // Remover nova linha
-           
+
+            printf("Informações adicionais registradas com sucesso.\n");
+            esperar_tecla();
             return;
         }
     }
 
     // Caso o ID da senha não seja encontrado
+    printf("=========================================\n");
+    printf("         Senha Não Encontrada            \n");
+    printf("=========================================\n");
     printf("Senha ID %d não encontrada.\n", id);
     esperar_tecla();
 }
@@ -177,31 +236,41 @@ void atender_senha(int id, int balcao) {
 void gerar_relatorios() {
     limpar_tela();
     time_t inicio, fim;
+    
+    printf("=========================================\n");
+    printf("        Geração de Relatórios            \n");
+    printf("=========================================\n");
     printf("Digite o horário de início:\n");
     inicio = validar_data();
-    printf("Digite o horário de fim:\n");
+    printf("\nDigite o horário de fim:\n");
     fim = validar_data();
 
     if (inicio >= fim) {
-        printf("Intervalo inválido: o início tem de ser anterior ao fim.\n");
+        printf("=========================================\n");
+        printf("        Intervalo de datas inválido       \n");
+        printf("=========================================\n");
+        printf("O início deve ser anterior ao fim.\n");
         esperar_tecla();
         return;
     }
 
     while (1) {
         limpar_tela();
-        printf("Relatórios:\n");
+        printf("=========================================\n");
+        printf("               Relatórios                 \n");
+        printf("=========================================\n");
         printf("1. Volume de senhas atendidas\n");
         printf("2. Médias de espera entre atendimentos\n");
         printf("3. Atendimentos por balcão\n");
         printf("4. Receitas de consultas marcadas\n");
         printf("5. Alterar intervalo de datas\n");
         printf("6. Voltar ao menu principal\n");
+        printf("=========================================\n");
         printf("Escolha uma opção: ");
-        
+
         int opcao;
         scanf("%d", &opcao);
-        
+
         switch (opcao) {
             case 1: {
                 int atendidas = 0;
@@ -210,7 +279,10 @@ void gerar_relatorios() {
                         atendidas++;
                     }
                 }
-                printf("Total de senhas atendidas no intervalo: %d\n", atendidas);
+                printf("=========================================\n");
+                printf("   Volume de Senhas Atendidas no Intervalo\n");
+                printf("=========================================\n");
+                printf("Total: %d\n", atendidas);
                 esperar_tecla();
                 break;
             }
@@ -223,6 +295,9 @@ void gerar_relatorios() {
                         atendidas++;
                     }
                 }
+                printf("=========================================\n");
+                printf("   Média de Espera entre Atendimentos    \n");
+                printf("=========================================\n");
                 if (atendidas == 0) {
                     printf("Nenhuma senha atendida no intervalo.\n");
                 } else {
@@ -238,8 +313,11 @@ void gerar_relatorios() {
                         atendimentos_balcao[senhas[i].balcao_atendido]++;
                     }
                 }
+                printf("=========================================\n");
+                printf("           Atendimentos por Balcão        \n");
+                printf("=========================================\n");
                 for (int i = 1; i <= 3; i++) {
-                    printf("Balcão %d: %d atendimentos.\n", i, atendimentos_balcao[i]);
+                    printf("Balcão %d: %d atendimentos\n", i, atendimentos_balcao[i]);
                 }
                 esperar_tecla();
                 break;
@@ -251,26 +329,79 @@ void gerar_relatorios() {
                         total_receita += senhas[i].pagamento;
                     }
                 }
+                printf("=========================================\n");
+                printf("         Receitas das Consultas            \n");
+                printf("=========================================\n");
                 printf("Receitas totais: %.2f€\n", total_receita);
                 esperar_tecla();
                 break;
             }
             case 5:
+                limpar_tela();
+                printf("=========================================\n");
+                printf("         Alterar Intervalo de Datas       \n");
+                printf("=========================================\n");
                 printf("Digite o horário de início:\n");
                 inicio = validar_data();
-                printf("Digite o horário de fim:\n");
+                printf("\nDigite o horário de fim:\n");
                 fim = validar_data();
                 if (inicio >= fim) {
-                    printf("Intervalo inválido: o início tem de ser anterior ao fim.\n");
+                    printf("=========================================\n");
+                    printf("        Intervalo de datas inválido       \n");
+                    printf("=========================================\n");
+                    printf("O início deve ser anterior ao fim.\n");
                     esperar_tecla();
                 }
                 break;
             case 6:
                 return;
             default:
-                printf("Opção inválida.\n");
+                printf("=========================================\n");
+                printf("           Opção Inválida                 \n");
+                printf("=========================================\n");
                 esperar_tecla();
         }
+    }
+}
+
+// Function prototypes
+void login();
+int is_admin = 0;
+
+void login() {
+    char username[20], password[20];
+    limpar_tela();
+
+    printf("=========================================\n");
+    printf("                 Login                   \n");
+    printf("=========================================\n");
+
+    printf("Utilizador: ");
+    scanf("%s", username);
+    printf("Palavra-Passe: ");
+    scanf("%s", password);
+
+    if (strcmp(username, ADMIN_USER) == 0 && strcmp(password, ADMIN_PASS) == 0) {
+        printf("=========================================\n");
+        printf("           Login Bem-Sucedido            \n");
+        printf("=========================================\n");
+        printf("Bem-vindo, Administrador!\n");
+        is_admin = 1;
+        esperar_tecla();
+    } else if (strcmp(username, NORMAL_USER) == 0 && strcmp(password, NORMAL_PASS) == 0) {
+        printf("=========================================\n");
+        printf("           Login Bem-Sucedido            \n");
+        printf("=========================================\n");
+        printf("Bem-vindo, Usuário!\n");
+        is_admin = 0;
+        esperar_tecla();
+    } else {
+        printf("=========================================\n");
+        printf("          Credenciais Inválidas          \n");
+        printf("=========================================\n");
+        printf("Usuário ou senha incorretos. Encerrando...\n");
+        esperar_tecla();
+        exit(1);
     }
 }
 
@@ -278,45 +409,103 @@ void gerar_relatorios() {
 int main() {
     while (1) {
         limpar_tela();
-        printf("Menu Principal:\n");
-        printf("1. Gerar senha de consulta\n");
-        printf("2. Gerar senha de urgência\n");
-        printf("3. Listar senhas\n");
-        printf("4. Atender senha\n");
-        printf("5. Gerar relatórios\n");
-        printf("6. Sair\n");
+        printf("=========================================\n");
+        printf("          Sistema de Atendimento         \n");
+        printf("=========================================\n");
+        printf("1. Login\n");
+        printf("2. Sair\n");
+        printf("=========================================\n");
         printf("Escolha uma opção: ");
         
-        int opcao;
-        scanf("%d", &opcao);
+        int sair = 1;
+        int op;
+        scanf("%d", &op);
 
-        switch (opcao) {
-            case 1:
-                gerar_senha("Consulta");
-                break;
-            case 2:
-                gerar_senha("Urgente");
-                break;
-            case 3:
-                listar_senhas();
-                break;
-            case 4: {
-                int id, balcao;
-                printf("Digite o ID da senha a ser atendida: ");
-                scanf("%d", &id);
-                printf("Digite o balcão de atendimento (1, 2 ou 3): ");
-                scanf("%d", &balcao);
-                atender_senha(id, balcao);
-                break;
+        if (op == 1) {
+            login();
+
+            while (sair) {
+                limpar_tela();
+                printf("=========================================\n");
+                printf("              Menu Principal             \n");
+                printf("=========================================\n");
+                printf("1. Gerar senha de consulta\n");
+                printf("2. Gerar senha de urgência\n");
+                if (is_admin) {
+                    printf("3. Listar senhas\n");
+                    printf("4. Atender senha\n");
+                    printf("5. Gerar relatórios\n");
+                }
+                printf("6. Sair\n");
+                printf("=========================================\n");
+                printf("Escolha uma opção: ");
+                
+                int opcao;
+                scanf("%d", &opcao);
+
+                switch (opcao) {
+                    case 1:
+                        gerar_senha("Consulta");
+                        break;
+                    case 2:
+                        gerar_senha("Urgente");
+                        break;
+                    case 3:
+                        if (is_admin) {
+                            listar_senhas();
+                        } else {
+                            printf("=========================================\n");
+                            printf("        Acesso negado. Permissão insuficiente.\n");
+                            printf("=========================================\n");
+                            esperar_tecla();
+                        }
+                        break;
+                    case 4: {
+                        if (is_admin) {
+                            int id, balcao;
+                            printf("Digite o ID da senha a ser atendida: ");
+                            scanf("%d", &id);
+                            printf("Digite o balcão de atendimento (1, 2 ou 3): ");
+                            scanf("%d", &balcao);
+                            atender_senha(id, balcao);
+                        } else {
+                            printf("=========================================\n");
+                            printf("        Acesso negado. Permissão insuficiente.\n");
+                            printf("=========================================\n");
+                            esperar_tecla();
+                        }
+                        break;
+                    }
+                    case 5:
+                        if (is_admin) {
+                            gerar_relatorios();
+                        } else {
+                            printf("=========================================\n");
+                            printf("        Acesso negado. Permissão insuficiente.\n");
+                            printf("=========================================\n");
+                            esperar_tecla();
+                        }
+                        break;
+                    case 6:
+                        sair = 0;
+                        break;
+                    default:
+                        printf("=========================================\n");
+                        printf("            Opção inválida.              \n");
+                        printf("=========================================\n");
+                        esperar_tecla();
+                }
             }
-            case 5:
-                gerar_relatorios();
-                break;
-            case 6:
-                return 0;
-            default:
-                printf("Opção inválida. Tente novamente.\n");
-                esperar_tecla();
+        } else if (op == 2) {
+            printf("=========================================\n");
+            printf("        Obrigado por usar o sistema!     \n");
+            printf("=========================================\n");
+            return 0;
+        } else {
+            printf("=========================================\n");
+            printf("            Opção inválida.              \n");
+            printf("=========================================\n");
+            esperar_tecla();
         }
     }
 }
